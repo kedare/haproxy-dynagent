@@ -9,31 +9,48 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kardianos/service"
+
 	"github.com/shirou/gopsutil/cpu"
 )
 
 // Main entrypoint
 func main() {
-	var agentMode = flag.Bool("agent", false, "Run the agent daemon")
-	var port = flag.Int("port", 8888, "The port the agent should listen to")
-	var defaultState = flag.String("state", "up", "The default state when starting the agent")
-
+	var port = 8888
+	var defaultState = "up"
 	flag.Parse()
 
-	if *agentMode == true {
-		processAgent(port, defaultState)
+	if len(flag.Args()) < 1 {
+		var serviceConfig = &service.Config{
+			Name:        "HAProxyDynAgent",
+			DisplayName: "HAProxy DynAgent",
+			Description: "State management service for HAProxy",
+			Arguments: []string{
+				"-port", string(port),
+				"-state", defaultState,
+			},
+		}
+
+		var haproxyDynAgentService = &HAProxyDynAgent{}
+
+		var service, err = service.New(haproxyDynAgentService, serviceConfig)
+		if err != nil {
+			log.Fatalf("Error setting up service: %v\n", err)
+		}
+		service.Run()
 	} else {
 		processClient(port)
 	}
+
 }
 
 // Run when the binary is running with the "-agent" flag
-func processAgent(port *int, defaultState *string) {
-	var listenAddress = fmt.Sprintf("0.0.0.0:%v", *port)
+func processAgent(port int, defaultState string) {
+	var listenAddress = fmt.Sprintf("0.0.0.0:%v", port)
 	log.Printf("HAPROXY DynAgent listening on %s\n", listenAddress)
 	var listener, err = net.Listen("tcp", listenAddress)
-	log.Printf("Default mode to '%s'", *defaultState)
-	var state = *defaultState
+	log.Printf("Default state to '%s'", defaultState)
+	var state = defaultState
 	if err != nil {
 		panic(err)
 	}
@@ -49,22 +66,22 @@ func processAgent(port *int, defaultState *string) {
 }
 
 // Run when the binary is running without the "-agent" flag, meaning we are using it as client
-func processClient(port *int) {
+func processClient(port int) {
 	if len(flag.Args()) < 1 {
-		log.Fatal("You need to pass the desired mode as parameter")
+		log.Fatal("You need to pass the desired state as parameter")
 	}
-	var mode = flag.Args()[0]
-	if isValidMode(mode) {
-		var listenAddress = fmt.Sprintf("127.0.0.1:%v", *port)
+	var state = flag.Args()[0]
+	if isValidState(state) {
+		var listenAddress = fmt.Sprintf("127.0.0.1:%v", port)
 		var conn, err = net.Dial("tcp", listenAddress)
 		if err != nil {
 			panic(err)
 		}
 		defer conn.Close()
-		fmt.Fprintf(conn, "%s\n", mode)
-		log.Println("Sent new state to the agent")
+		fmt.Fprintf(conn, "%s\n", state)
+		log.Printf("Sent new state '%v' to the agent\n", state)
 	} else {
-		log.Fatalln("Invalid mode provided")
+		log.Fatalln("Invalid state provided")
 	}
 }
 
@@ -82,16 +99,17 @@ func routeRequest(conn net.Conn, state *string) {
 // Handle the administrative connection that is allowed to change the state
 func handleAdministrativeRequest(conn net.Conn, state *string) {
 	log.Printf("Got administrative connection from %s\n", conn.RemoteAddr().String())
+	fmt.Fprintf(conn, "Current state: %v\r\n Please enter new state: ", *state)
 	var buffer, err = bufio.NewReader(conn).ReadBytes('\n')
 	if err != nil {
 		log.Fatalf("Error reading buffer from administrative connection: %v", err)
 	}
-	var request = strings.Trim(string(buffer), " \n\r")
-	if isValidMode(request) {
-		log.Printf("Switching mode to '%v'", request)
+	var request = strings.Trim(string(buffer), " \r\n")
+	if isValidState(request) {
+		log.Printf("Switching state to '%v'", request)
 		*state = request
 	} else {
-		log.Printf("Got invalid mode '%v'", request)
+		log.Printf("Got invalid state '%v'", request)
 	}
 }
 
@@ -114,9 +132,9 @@ func handleHaproxyRequest(conn net.Conn, state *string) {
 	conn.Write([]byte(response))
 }
 
-// Check that the state entered in the administrative mode is valid
-func isValidMode(mode string) bool {
-	var VALID_MODES = []string{
+// Check that the state entered in the administrative state is valid
+func isValidState(state string) bool {
+	var VALID_STATES = []string{
 		"ready",
 		"up",
 		"drain",
@@ -125,8 +143,8 @@ func isValidMode(mode string) bool {
 		"failed",
 		"stopped",
 	}
-	for _, validMode := range VALID_MODES {
-		if validMode == mode {
+	for _, validState := range VALID_STATES {
+		if validState == state {
 			return true
 		}
 	}
