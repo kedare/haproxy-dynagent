@@ -16,12 +16,13 @@ import (
 
 // Main entrypoint
 func main() {
-	var port = 8888
-	var defaultState = "up"
+	configuration := loadConfiguration()
+	port := configuration.ListenPort
+	defaultState := configuration.DefaultState
 	flag.Parse()
 
 	if len(flag.Args()) < 1 {
-		var serviceConfig = &service.Config{
+		serviceConfig := &service.Config{
 			Name:        "HAProxyDynAgent",
 			DisplayName: "HAProxy DynAgent",
 			Description: "State management service for HAProxy",
@@ -31,9 +32,9 @@ func main() {
 			},
 		}
 
-		var haproxyDynAgentService = &HAProxyDynAgent{}
+		haproxyDynAgentService := &HAProxyDynAgent{}
 
-		var service, err = service.New(haproxyDynAgentService, serviceConfig)
+		service, err := service.New(haproxyDynAgentService, serviceConfig)
 		if err != nil {
 			log.Fatalf("Error setting up service: %v\n", err)
 		}
@@ -46,18 +47,18 @@ func main() {
 
 // Run when the binary is running with the "-agent" flag
 func processAgent(port int, defaultState string) {
-	var listenAddress = fmt.Sprintf("0.0.0.0:%v", port)
+	listenAddress := fmt.Sprintf("0.0.0.0:%v", port)
 	log.Printf("HAPROXY DynAgent listening on %s\n", listenAddress)
-	var listener, err = net.Listen("tcp", listenAddress)
+	listener, err := net.Listen("tcp", listenAddress)
 	log.Printf("Default state to '%s'", defaultState)
-	var state = defaultState
+	state := defaultState
 	if err != nil {
 		panic(err)
 	}
 	defer listener.Close()
 
 	for {
-		var conn, err = listener.Accept()
+		conn, err := listener.Accept()
 		if err != nil {
 			panic(err)
 		}
@@ -70,10 +71,10 @@ func processClient(port int) {
 	if len(flag.Args()) < 1 {
 		log.Fatal("You need to pass the desired state as parameter")
 	}
-	var state = flag.Args()[0]
+	state := flag.Args()[0]
 	if isValidState(state) {
-		var listenAddress = fmt.Sprintf("127.0.0.1:%v", port)
-		var conn, err = net.Dial("tcp", listenAddress)
+		listenAddress := fmt.Sprintf("127.0.0.1:%v", port)
+		conn, err := net.Dial("tcp", listenAddress)
 		if err != nil {
 			panic(err)
 		}
@@ -100,11 +101,11 @@ func routeRequest(conn net.Conn, state *string) {
 func handleAdministrativeRequest(conn net.Conn, state *string) {
 	log.Printf("Got administrative connection from %s\n", conn.RemoteAddr().String())
 	fmt.Fprintf(conn, "Current state: %v\r\n Please enter new state: ", *state)
-	var buffer, err = bufio.NewReader(conn).ReadBytes('\n')
+	buffer, err := bufio.NewReader(conn).ReadBytes('\n')
 	if err != nil {
 		log.Fatalf("Error reading buffer from administrative connection: %v", err)
 	}
-	var request = strings.Trim(string(buffer), " \r\n")
+	request := strings.Trim(string(buffer), " \r\n")
 	if isValidState(request) {
 		log.Printf("Switching state to '%v'", request)
 		*state = request
@@ -120,8 +121,8 @@ func handleHaproxyRequest(conn net.Conn, state *string) {
 	if *state == "up" {
 		// If the state is up, we return a percentage that will tell
 		// HAProxy how busy if the server (The higher it is, the most requests it will receive)
-		var cpuUsage, _ = cpu.Percent(time.Duration(1)*time.Second, false)
-		var ratio = 100 - cpuUsage[0]
+		cpuUsage, _ := cpu.Percent(time.Duration(1)*time.Second, false)
+		ratio := 100 - cpuUsage[0]
 		response = fmt.Sprintf("%.0f%%", ratio)
 	} else {
 		// If not, return the state directly
@@ -134,7 +135,7 @@ func handleHaproxyRequest(conn net.Conn, state *string) {
 
 // Check that the state entered in the administrative state is valid
 func isValidState(state string) bool {
-	var VALID_STATES = []string{
+	VALID_STATES := []string{
 		"ready",
 		"up",
 		"drain",

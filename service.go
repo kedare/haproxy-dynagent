@@ -15,8 +15,9 @@ type HAProxyDynAgent struct {
 
 // Startup hook
 func (p *HAProxyDynAgent) Start(s service.Service) error {
-	var port = 8888
-	var defaultState = "up"
+	configuration := loadConfiguration()
+	port := configuration.ListenPort
+	defaultState := configuration.DefaultState
 	go processAgent(port, defaultState)
 	return nil
 }
@@ -25,8 +26,6 @@ func (p *HAProxyDynAgent) Start(s service.Service) error {
 func (p *HAProxyDynAgent) Stop(s service.Service) error {
 	if service.Interactive() {
 		os.Exit(0)
-	} else if p.cmd.ProcessState.Exited() == false {
-		p.cmd.Process.Kill()
 	}
 	return nil
 }

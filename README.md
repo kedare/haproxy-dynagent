@@ -12,13 +12,13 @@ https://cbonte.github.io/haproxy-dconv/configuration-1.5.html#5.2-agent-check
 
 ## Usage
 
-You just need to take the .exe and the .ps1, there are no runtime dependencies
+You just need to take the .exe, the .toml and the .ps1, there are no runtime dependencies
 
 You need to first install the service using the ```install.ps1``` script. 
 
 Then, make sure it has been installed successfully and is running.
 
-Your server will by default have the state "up".
+Your server will by default have the state "up", this can be changed in the .toml configuration file (Check the valid options in the HAProxy documentation)
 
 To change the state, you need to run the command with as parameter the state you want to put, examples :
 
