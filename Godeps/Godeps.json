@@ -18,6 +18,14 @@
 			"Rev": "5e9c030faf78847db7aa77e3661b9cc449de29b7"
 		},
 		{
+			"ImportPath": "github.com/kardianos/osext",
+			"Rev": "c2c54e542fb797ad986b31721e1baedf214ca413"
+		},
+		{
+			"ImportPath": "github.com/kardianos/service",
+			"Rev": "6d3a0ee7d3425d9d835debc51a0ca1ffa28f4893"
+		},
+		{
 			"ImportPath": "github.com/shirou/gopsutil/cpu",
 			"Comment": "v2.16.11-2-g449c825",
 			"Rev": "449c8250b0e837d670b2f9e7337e90ad00514b0c"
@@ -26,6 +34,26 @@
 			"ImportPath": "github.com/shirou/gopsutil/internal/common",
 			"Comment": "v2.16.11-2-g449c825",
 			"Rev": "449c8250b0e837d670b2f9e7337e90ad00514b0c"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/windows",
+			"Rev": "478fcf54317e52ab69f40bb4c7a1520288d7f7ea"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/windows/registry",
+			"Rev": "478fcf54317e52ab69f40bb4c7a1520288d7f7ea"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/windows/svc",
+			"Rev": "478fcf54317e52ab69f40bb4c7a1520288d7f7ea"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/windows/svc/eventlog",
+			"Rev": "478fcf54317e52ab69f40bb4c7a1520288d7f7ea"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/windows/svc/mgr",
+			"Rev": "478fcf54317e52ab69f40bb4c7a1520288d7f7ea"
 		}
 	]
 }
