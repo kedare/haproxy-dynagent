@@ -118,16 +118,9 @@ func handleAdministrativeRequest(conn net.Conn, state *string) {
 func handleHaproxyRequest(conn net.Conn, state *string) {
 	log.Printf("Got health request from %s\n", conn.RemoteAddr().String())
 	var response string
-	if *state == "up" {
-		// If the state is up, we return a percentage that will tell
-		// HAProxy how busy if the server (The higher it is, the most requests it will receive)
-		cpuUsage, _ := cpu.Percent(time.Duration(1)*time.Second, false)
-		ratio := 100 - cpuUsage[0]
-		response = fmt.Sprintf("%.0f%%", ratio)
-	} else {
-		// If not, return the state directly
-		response = fmt.Sprintf("%s\n", *state)
-	}
+	cpuUsage, _ := cpu.Percent(time.Duration(1)*time.Second, false)
+	ratio := 100 - cpuUsage[0]
+	response = fmt.Sprintf("%s %.0f%%", *state, ratio)
 	log.Printf("Replying with current active state '%s'\n", response)
 
 	conn.Write([]byte(response))
