@@ -1,11 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"log"
 	"net"
+	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -17,8 +18,6 @@ import (
 // Main entrypoint
 func main() {
 	configuration := loadConfiguration()
-	port := configuration.ListenPort
-	defaultState := configuration.DefaultState
 	flag.Parse()
 
 	if len(flag.Args()) < 1 {
@@ -26,10 +25,7 @@ func main() {
 			Name:        "HAProxyDynAgent",
 			DisplayName: "HAProxy DynAgent",
 			Description: "State management service for HAProxy",
-			Arguments: []string{
-				"-port", string(port),
-				"-state", defaultState,
-			},
+			Arguments:   []string{},
 		}
 
 		haproxyDynAgentService := &HAProxyDynAgent{}
@@ -40,15 +36,16 @@ func main() {
 		}
 		service.Run()
 	} else {
-		processClient(port)
+		processClient(configuration.AdminPort)
 	}
 
 }
 
 // Run when the binary is running with the "-agent" flag
-func processAgent(port int, defaultState string) {
+func processAgent(port int, adminPort int, defaultState string) {
 	listenAddress := fmt.Sprintf("0.0.0.0:%v", port)
-	log.Printf("HAPROXY DynAgent listening on %s\n", listenAddress)
+	log.Printf("HAPROXY DynAgent listening on port %d\n", port)
+	log.Printf("Administrative interface on port %d\n", adminPort)
 	listener, err := net.Listen("tcp", listenAddress)
 	log.Printf("Default state to '%s'", defaultState)
 	state := defaultState
@@ -56,6 +53,8 @@ func processAgent(port int, defaultState string) {
 		panic(err)
 	}
 	defer listener.Close()
+
+	startAdministrativeInterface(adminPort, &state)
 
 	for {
 		conn, err := listener.Accept()
@@ -67,20 +66,25 @@ func processAgent(port int, defaultState string) {
 }
 
 // Run when the binary is running without the "-agent" flag, meaning we are using it as client
-func processClient(port int) {
+func processClient(adminPort int) {
 	if len(flag.Args()) < 1 {
 		log.Fatal("You need to pass the desired state as parameter")
+	} else {
+		log.Println("Sending new state to the agent")
 	}
 	state := flag.Args()[0]
 	if isValidState(state) {
-		listenAddress := fmt.Sprintf("127.0.0.1:%v", port)
-		conn, err := net.Dial("tcp", listenAddress)
+		adminUrl := fmt.Sprintf("http://127.0.0.1:%v/", adminPort)
+		payload := url.Values{}
+		payload.Add("state", state)
+		res, err := http.PostForm(adminUrl, payload)
 		if err != nil {
-			panic(err)
+			log.Fatalln("Failed to set state", err)
+		} else if res.StatusCode != 200 {
+			log.Fatalln("Got invalid response code", res.StatusCode)
+		} else {
+			log.Println("New state configuration done")
 		}
-		defer conn.Close()
-		fmt.Fprintf(conn, "%s\n", state)
-		log.Printf("Sent new state '%v' to the agent\n", state)
 	} else {
 		log.Fatalln("Invalid state provided")
 	}
@@ -90,38 +94,23 @@ func processClient(port int) {
 // Or to the administrative mode to set the state
 func routeRequest(conn net.Conn, state *string) {
 	defer conn.Close()
-	if strings.Contains(conn.RemoteAddr().String(), "127.0.0.1") {
-		handleAdministrativeRequest(conn, state)
-	} else {
-		handleHaproxyRequest(conn, state)
-	}
-}
-
-// Handle the administrative connection that is allowed to change the state
-func handleAdministrativeRequest(conn net.Conn, state *string) {
-	log.Printf("Got administrative connection from %s\n", conn.RemoteAddr().String())
-	fmt.Fprintf(conn, "Current state: %v\r\n Please enter new state: ", *state)
-	buffer, err := bufio.NewReader(conn).ReadBytes('\n')
-	if err != nil {
-		log.Fatalf("Error reading buffer from administrative connection: %v", err)
-	}
-	request := strings.Trim(string(buffer), " \r\n")
-	if isValidState(request) {
-		log.Printf("Switching state to '%v'", request)
-		*state = request
-	} else {
-		log.Printf("Got invalid state '%v'", request)
-	}
+	handleHaproxyRequest(conn, state)
 }
 
 // Handle the HAProxy connection, returning it the state
 func handleHaproxyRequest(conn net.Conn, state *string) {
+	defer conn.Close()
 	log.Printf("Got health request from %s\n", conn.RemoteAddr().String())
 	var response string
 	cpuUsage, _ := cpu.Percent(time.Duration(1)*time.Second, false)
 	ratio := 100 - cpuUsage[0]
-	response = fmt.Sprintf("%s %.0f%%", *state, ratio)
-	log.Printf("Replying with current active state '%s'\n", response)
+	if *state == "up" || *state == "ready" {
+		response = fmt.Sprintf("%s,%.0f%%\n", *state, ratio)
+	} else {
+		response = fmt.Sprintf("%s\n", *state)
+	}
+
+	log.Printf("Replying with current active state '%s'\n", strings.TrimSpace(response))
 
 	conn.Write([]byte(response))
 }

@@ -17,8 +17,9 @@ type HAProxyDynAgent struct {
 func (p *HAProxyDynAgent) Start(s service.Service) error {
 	configuration := loadConfiguration()
 	port := configuration.ListenPort
+	adminPort := configuration.AdminPort
 	defaultState := configuration.DefaultState
-	go processAgent(port, defaultState)
+	go processAgent(port, adminPort, defaultState)
 	return nil
 }
 

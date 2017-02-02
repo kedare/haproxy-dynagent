@@ -10,6 +10,7 @@ import (
 
 type Configuration struct {
 	ListenPort   int
+	AdminPort    int
 	DefaultState string
 }
 
