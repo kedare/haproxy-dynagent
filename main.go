@@ -42,7 +42,7 @@ func main() {
 }
 
 // Run when the binary is running with the "-agent" flag
-func processAgent(port int, adminPort int, defaultState string) {
+func processAgent(port int, adminPort int, defaultState string, reportDynamicWeight bool) {
 	listenAddress := fmt.Sprintf("0.0.0.0:%v", port)
 	log.Printf("HAPROXY DynAgent listening on port %d\n", port)
 	log.Printf("Administrative interface on port %d\n", adminPort)
@@ -54,14 +54,14 @@ func processAgent(port int, adminPort int, defaultState string) {
 	}
 	defer listener.Close()
 
-	startAdministrativeInterface(adminPort, &state)
+	go startAdministrativeInterface(adminPort, &state)
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			panic(err)
 		}
-		go routeRequest(conn, &state)
+		go routeRequest(conn, &state, reportDynamicWeight)
 	}
 }
 
@@ -92,18 +92,23 @@ func processClient(adminPort int) {
 
 // Route the incoming TCP request either to the HAPROXY mode to send the status
 // Or to the administrative mode to set the state
-func routeRequest(conn net.Conn, state *string) {
+func routeRequest(conn net.Conn, state *string, reportDynamicWeight bool) {
 	defer conn.Close()
-	handleHaproxyRequest(conn, state)
+	handleHaproxyRequest(conn, state, reportDynamicWeight)
 }
 
 // Handle the HAProxy connection, returning it the state
-func handleHaproxyRequest(conn net.Conn, state *string) {
-	defer conn.Close()
+func handleHaproxyRequest(conn net.Conn, state *string, reportDynamicWeight bool) {
 	log.Printf("Got health request from %s\n", conn.RemoteAddr().String())
 	var response string
-	cpuUsage, _ := cpu.Percent(time.Duration(1)*time.Second, false)
-	ratio := 100 - cpuUsage[0]
+	var ratio float64
+	if reportDynamicWeight {
+		cpuUsage, _ := cpu.Percent(time.Duration(1)*time.Second, false)
+		ratio = 100 - cpuUsage[0]
+	} else {
+		ratio = 100
+	}
+
 	if *state == "up" || *state == "ready" {
 		response = fmt.Sprintf("%s,%.0f%%\n", *state, ratio)
 	} else {

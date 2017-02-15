@@ -19,7 +19,8 @@ func (p *HAProxyDynAgent) Start(s service.Service) error {
 	port := configuration.ListenPort
 	adminPort := configuration.AdminPort
 	defaultState := configuration.DefaultState
-	go processAgent(port, adminPort, defaultState)
+	reportDynamicWeight := configuration.ReportDynamicWeight
+	go processAgent(port, adminPort, defaultState, reportDynamicWeight)
 	return nil
 }
 

@@ -1,3 +1,4 @@
 ListenPort = 8888
 AdminPort = 8889
 DefaultState = "up"
+ReportDynamicWeight = false

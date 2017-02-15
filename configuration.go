@@ -9,9 +9,10 @@ import (
 )
 
 type Configuration struct {
-	ListenPort   int
-	AdminPort    int
-	DefaultState string
+	ListenPort          int
+	AdminPort           int
+	DefaultState        string
+	ReportDynamicWeight bool
 }
 
 func loadConfiguration() Configuration {
