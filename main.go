@@ -17,6 +17,8 @@ import (
 
 // Main entrypoint
 func main() {
+	version := 2
+	log.Printf("HAProxy DynAgent v%v", version)
 	configuration := loadConfiguration()
 	flag.Parse()
 
@@ -104,7 +106,7 @@ func handleHaproxyRequest(conn net.Conn, state *string, reportDynamicWeight bool
 	var ratio float64
 	if reportDynamicWeight {
 		cpuUsage, _ := cpu.Percent(time.Duration(1)*time.Second, false)
-		ratio = 100 - cpuUsage[0]
+		ratio = 100 - cpuUsage[0]/2
 	} else {
 		ratio = 100
 	}
