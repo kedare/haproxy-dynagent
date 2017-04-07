@@ -19,7 +19,7 @@ func getRootHandler(state *string) func(w http.ResponseWriter, r *http.Request) 
             }
 
             .main {
-                width: 30%;
+                width: 90%;
                 margin: auto;
                 margin-top: 20px;
             }
