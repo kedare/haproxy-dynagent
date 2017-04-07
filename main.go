@@ -76,10 +76,10 @@ func processClient(adminPort int) {
 	}
 	state := flag.Args()[0]
 	if isValidState(state) {
-		adminUrl := fmt.Sprintf("http://127.0.0.1:%v/", adminPort)
+		adminURL := fmt.Sprintf("http://127.0.0.1:%v/", adminPort)
 		payload := url.Values{}
 		payload.Add("state", state)
-		res, err := http.PostForm(adminUrl, payload)
+		res, err := http.PostForm(adminURL, payload)
 		if err != nil {
 			log.Fatalln("Failed to set state", err)
 		} else if res.StatusCode != 200 {
@@ -124,7 +124,7 @@ func handleHaproxyRequest(conn net.Conn, state *string, reportDynamicWeight bool
 
 // Check that the state entered in the administrative state is valid
 func isValidState(state string) bool {
-	VALID_STATES := []string{
+	ValidStates := []string{
 		"ready",
 		"up",
 		"drain",
@@ -133,7 +133,7 @@ func isValidState(state string) bool {
 		"failed",
 		"stopped",
 	}
-	for _, validState := range VALID_STATES {
+	for _, validState := range ValidStates {
 		if validState == state {
 			return true
 		}
