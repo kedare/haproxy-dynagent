@@ -16,11 +16,7 @@ type HAProxyDynAgent struct {
 // Startup hook
 func (p *HAProxyDynAgent) Start(s service.Service) error {
 	configuration := loadConfiguration()
-	port := configuration.ListenPort
-	adminPort := configuration.AdminPort
-	defaultState := configuration.DefaultState
-	reportDynamicWeight := configuration.ReportDynamicWeight
-	go processAgent(port, adminPort, defaultState, reportDynamicWeight)
+	go processAgent(configuration)
 	return nil
 }
 

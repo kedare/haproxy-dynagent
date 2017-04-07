@@ -44,26 +44,32 @@ func main() {
 }
 
 // Run when the binary is running with the "-agent" flag
-func processAgent(port int, adminPort int, defaultState string, reportDynamicWeight bool) {
-	listenAddress := fmt.Sprintf("0.0.0.0:%v", port)
-	log.Printf("HAPROXY DynAgent listening on port %d\n", port)
-	log.Printf("Administrative interface on port %d\n", adminPort)
+func processAgent(configuration Configuration) {
+	listenAddress := fmt.Sprintf("0.0.0.0:%v", configuration.ListenPort)
+	log.Printf("HAPROXY DynAgent listening on port %d\n", configuration.ListenPort)
+	log.Printf("Administrative interface on port %d\n", configuration.AdminPort)
 	listener, err := net.Listen("tcp", listenAddress)
-	log.Printf("Default state to '%s'", defaultState)
-	state := defaultState
+	log.Printf("Default state to '%s'", configuration.DefaultState)
+	state := configuration.DefaultState
+	dynamicWeight := 100.0
 	if err != nil {
 		panic(err)
 	}
 	defer listener.Close()
 
-	go startAdministrativeInterface(adminPort, &state)
+	go startAdministrativeInterface(configuration, &state)
+	if configuration.ReportDynamicWeight {
+		log.Println("Dynamic Weight Reporting enabled")
+		ticker := time.NewTicker(time.Duration(configuration.DynamicWeightCPUAverageOnSeconds) * time.Second)
+		go dynamicWeightWorker(*ticker, configuration, &dynamicWeight)
+	}
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			panic(err)
 		}
-		go routeRequest(conn, &state, reportDynamicWeight)
+		go routeRequest(conn, &state, &dynamicWeight, configuration)
 	}
 }
 
@@ -94,19 +100,18 @@ func processClient(adminPort int) {
 
 // Route the incoming TCP request either to the HAPROXY mode to send the status
 // Or to the administrative mode to set the state
-func routeRequest(conn net.Conn, state *string, reportDynamicWeight bool) {
+func routeRequest(conn net.Conn, state *string, dynamicWeight *float64, configuration Configuration) {
 	defer conn.Close()
-	handleHaproxyRequest(conn, state, reportDynamicWeight)
+	handleHaproxyRequest(conn, state, dynamicWeight, configuration)
 }
 
 // Handle the HAProxy connection, returning it the state
-func handleHaproxyRequest(conn net.Conn, state *string, reportDynamicWeight bool) {
+func handleHaproxyRequest(conn net.Conn, state *string, dynamicWeight *float64, configuration Configuration) {
 	log.Printf("Got health request from %s\n", conn.RemoteAddr().String())
 	var response string
 	var ratio float64
-	if reportDynamicWeight {
-		cpuUsage, _ := cpu.Percent(time.Duration(1)*time.Second, false)
-		ratio = 100 - cpuUsage[0]/2
+	if configuration.ReportDynamicWeight {
+		ratio = *dynamicWeight
 	} else {
 		ratio = 100
 	}
@@ -139,4 +144,16 @@ func isValidState(state string) bool {
 		}
 	}
 	return false
+}
+
+// This function is called at regular interval to update the dynamic weight value
+func dynamicWeightWorker(ticker time.Ticker, configuration Configuration, dynamicWeight *float64) {
+	for {
+		select {
+		case <-ticker.C:
+			cpuUsage, _ := cpu.Percent(time.Duration(configuration.DynamicWeightCPUAverageOnSeconds)*time.Second, false)
+			*dynamicWeight = 100 - cpuUsage[0]/2
+			log.Printf("Calculated dynamic weight for the last %v seconds: %.0f%%", configuration.DynamicWeightCPUAverageOnSeconds, *dynamicWeight)
+		}
+	}
 }

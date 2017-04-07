@@ -1,4 +1,5 @@
 ListenPort = 8888
 AdminPort = 8889
 DefaultState = "up"
-ReportDynamicWeight = false
+ReportDynamicWeight = true
+DynamicWeightCPUAverageOnSeconds = 10

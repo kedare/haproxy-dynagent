@@ -37,7 +37,7 @@ func getRootHandler(state *string) func(w http.ResponseWriter, r *http.Request) 
             .state-down {
                 background:red;
             }
-            
+
             .border-state-down {
                 border: 1px solid red;
             }
@@ -148,7 +148,7 @@ func getRootHandler(state *string) func(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func startAdministrativeInterface(port int, state *string) {
+func startAdministrativeInterface(configuration Configuration, state *string) {
 	http.HandleFunc("/", getRootHandler(state))
-	http.ListenAndServe(fmt.Sprintf("127.0.0.1:%v", port), nil)
+	http.ListenAndServe(fmt.Sprintf("127.0.0.1:%v", configuration.AdminPort), nil)
 }
