@@ -9,6 +9,8 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+// Configuration represents the parameter defined
+// in the configuration file (or for testing)
 type Configuration struct {
 	ListenPort                       int
 	AdminPort                        int
@@ -17,6 +19,7 @@ type Configuration struct {
 	DynamicWeightCPUAverageOnSeconds uint
 }
 
+// Loads the configuration file or generate the equivalent for testing
 func loadConfiguration() Configuration {
 	configuration := &Configuration{}
 	if flag.Lookup("test.v") != nil {
