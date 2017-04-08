@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"path/filepath"
@@ -17,11 +18,17 @@ type Configuration struct {
 }
 
 func loadConfiguration() Configuration {
-
-	dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
-	configurationFilePath := dir + "/config.toml"
-	log.Printf("Loading configuration from %v", configurationFilePath)
 	configuration := &Configuration{}
-	toml.DecodeFile(configurationFilePath, &configuration)
+	if flag.Lookup("test.v") != nil {
+		configuration.AdminPort = 8889
+		configuration.ListenPort = 8888
+		configuration.ReportDynamicWeight = true
+		configuration.DynamicWeightCPUAverageOnSeconds = 1
+	} else {
+		dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+		configurationFilePath := dir + "/config.toml"
+		log.Printf("Loading configuration from %v", configurationFilePath)
+		toml.DecodeFile(configurationFilePath, &configuration)
+	}
 	return *configuration
 }

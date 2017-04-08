@@ -38,7 +38,12 @@ func main() {
 		}
 		service.Run()
 	} else {
-		processClient(configuration.AdminPort)
+		if len(flag.Args()) < 1 {
+			log.Fatal("You need to pass the desired state as parameter")
+		} else {
+			log.Println("Sending new state to the agent")
+		}
+		processClient(configuration.AdminPort, flag.Args()[0])
 	}
 
 }
@@ -74,13 +79,8 @@ func processAgent(configuration Configuration) {
 }
 
 // Run when the binary is running without the "-agent" flag, meaning we are using it as client
-func processClient(adminPort int) {
-	if len(flag.Args()) < 1 {
-		log.Fatal("You need to pass the desired state as parameter")
-	} else {
-		log.Println("Sending new state to the agent")
-	}
-	state := flag.Args()[0]
+func processClient(adminPort int, newState string) {
+	state := newState
 	if isValidState(state) {
 		adminURL := fmt.Sprintf("http://127.0.0.1:%v/", adminPort)
 		payload := url.Values{}
