@@ -15,8 +15,8 @@ test:
     - mkdir -p "$IMPORT_PATH"
     - ln -sf "$(pwd)" "$APP_PATH"
     - cd "$APP_PATH" && glide install
-    - go vet
+    - cd "$APP_PATH" && go vet
   post:
-    - make all
+    - cd "$APP_PATH" && make all
   override:
     - cd "$APP_PATH" && go test -v -race -cover -coverprofile=coverage.out $(glide nv)
