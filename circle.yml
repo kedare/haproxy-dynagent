@@ -17,6 +17,6 @@ test:
     - cd "$APP_PATH" && glide install
     - go vet
   post:
-    make all
+    - make all
   override:
     - cd "$APP_PATH" && go test -v -race -cover -coverprofile=coverage.out $(glide nv)
