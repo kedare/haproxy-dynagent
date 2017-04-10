@@ -38,11 +38,7 @@ func main() {
 		}
 		service.Run()
 	} else {
-		if len(flag.Args()) < 1 {
-			log.Fatal("You need to pass the desired state as parameter")
-		} else {
-			log.Println("Sending new state to the agent")
-		}
+		log.Println("Sending new state to the agent")
 		processClient(configuration.AdminPort, flag.Args()[0])
 	}
 
