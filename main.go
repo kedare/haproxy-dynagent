@@ -48,7 +48,7 @@ func main() {
 
 }
 
-// Run when the binary is running with the "-agent" flag
+// Run when the binary is running without any parameter, meaning we are using it as agent/service
 func processAgent(configuration Configuration) {
 	listenAddress := fmt.Sprintf("0.0.0.0:%v", configuration.ListenPort)
 	log.Printf("HAPROXY DynAgent listening on port %d\n", configuration.ListenPort)
@@ -78,7 +78,7 @@ func processAgent(configuration Configuration) {
 	}
 }
 
-// Run when the binary is running without the "-agent" flag, meaning we are using it as client
+// Run when the binary is running with a parameter, meaning we are using it as client
 func processClient(adminPort int, newState string) {
 	state := newState
 	if isValidState(state) {
