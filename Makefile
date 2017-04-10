@@ -1,4 +1,4 @@
-all: windows linux osx
+all: windows linux
 
 install-dependencies:
 	glide restore
