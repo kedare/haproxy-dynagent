@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"net"
 	"testing"
 	"time"
 )
@@ -33,4 +35,7 @@ func TestDaemonWorkflow(t *testing.T) {
 	go main()
 	time.Sleep(time.Duration(200) * time.Millisecond)
 	processClient(configuration.AdminPort, "up")
+	conn, _ := net.Dial("tcp", "127.0.0.1:8888")
+	defer conn.Close()
+	fmt.Fprint(conn, "")
 }
