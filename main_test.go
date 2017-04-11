@@ -7,11 +7,13 @@ import (
 	"time"
 )
 
+// Build the test configuration (Without real configuration file)
 func buildTestConfiguration(t *testing.T) (configuration Configuration) {
 	configuration = loadConfiguration()
 	return
 }
 
+// Test states checks
 func TestValidStates(t *testing.T) {
 	if isValidState("WRONG") {
 		t.Error("WRONG is not a valid state")
@@ -22,6 +24,7 @@ func TestValidStates(t *testing.T) {
 	}
 }
 
+// Test the dynamic weight worker
 func TestDynamicWeightWorker(t *testing.T) {
 	configuration := buildTestConfiguration(t)
 	ticker := time.NewTicker(time.Duration(configuration.DynamicWeightCPUAverageOnSeconds) * time.Second)
@@ -30,6 +33,7 @@ func TestDynamicWeightWorker(t *testing.T) {
 	time.Sleep(time.Duration(3) * time.Second)
 }
 
+// Test the full workflow
 func TestDaemonWorkflow(t *testing.T) {
 	configuration := buildTestConfiguration(t)
 	go main()
