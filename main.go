@@ -113,7 +113,7 @@ func handleHaproxyRequest(conn net.Conn, state *string, dynamicWeight *float64, 
 	}
 
 	if *state == "up" || *state == "ready" {
-		response = fmt.Sprintf("%s,%.0f%%\n", *state, ratio)
+		response = fmt.Sprintf("%s %.0f%%\n", *state, ratio)
 	} else {
 		response = fmt.Sprintf("%s\n", *state)
 	}
