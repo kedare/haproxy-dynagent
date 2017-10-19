@@ -1,6 +1,6 @@
 # HAProxy DynAgent
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/kedare/haproxy-dynagent)](https://goreportcard.com/report/github.com/kedare/haproxy-dynagent)
+[![Go Report Card](https://goreportcard.com/badge/github.com/lodgify/haproxy-dynagent)](https://goreportcard.com/report/github.com/lodgify/haproxy-dynagent)
 
 ## Introduction
 
