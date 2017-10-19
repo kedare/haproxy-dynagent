@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"os/exec"
 
@@ -15,7 +16,10 @@ type HAProxyDynAgent struct {
 
 // Startup hook
 func (p *HAProxyDynAgent) Start(s service.Service) error {
-	configuration := loadConfiguration()
+	configuration, err := loadConfiguration()
+	if err != nil {
+		log.Fatal("Failed to load configuration:", err)
+	}
 	go processAgent(configuration)
 	return nil
 }

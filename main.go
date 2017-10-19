@@ -19,7 +19,10 @@ import (
 func main() {
 	version := 2
 	log.Printf("HAProxy DynAgent v%v", version)
-	configuration := loadConfiguration()
+	configuration, err := loadConfiguration()
+	if err != nil {
+		log.Fatal("Failed to load configuration:", err)
+	}
 	flag.Parse()
 
 	if len(flag.Args()) < 1 {
