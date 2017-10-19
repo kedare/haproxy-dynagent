@@ -39,7 +39,10 @@ func main() {
 		if err != nil {
 			log.Fatalf("Error setting up service: %v\n", err)
 		}
-		service.Run()
+		err = service.Run()
+		if err != nil {
+			log.Fatalf("Error when starting the service: %v\n", err)
+		}
 	} else {
 		log.Println("Sending new state to the agent")
 		processClient(configuration.AdminPort, flag.Args()[0])
@@ -59,7 +62,12 @@ func processAgent(configuration Configuration) {
 	if err != nil {
 		panic(err)
 	}
-	defer listener.Close()
+	defer func() {
+		err := listener.Close()
+		if err != nil {
+			log.Printf("Failed to close HTTP listener: %s\n", err)
+		}
+	}()
 
 	go startAdministrativeInterface(configuration, &state)
 	if configuration.ReportDynamicWeight {
@@ -100,7 +108,12 @@ func processClient(adminPort int, newState string) {
 // Route the incoming TCP request either to the HAPROXY mode to send the status
 // Or to the administrative mode to set the state
 func routeRequest(conn net.Conn, state *string, dynamicWeight *float64, configuration Configuration) {
-	defer conn.Close()
+	defer func() {
+		err := conn.Close()
+		if err != nil {
+			log.Printf("Failed to close the incoming TCP socket: %s\n", err)
+		}
+	}()
 	handleHaproxyRequest(conn, state, dynamicWeight, configuration)
 }
 
@@ -123,7 +136,10 @@ func handleHaproxyRequest(conn net.Conn, state *string, dynamicWeight *float64, 
 
 	log.Printf("Replying with current active state '%s'\n", strings.TrimSpace(response))
 
-	conn.Write([]byte(response))
+	_, err := conn.Write([]byte(response))
+	if err != nil {
+		log.Printf("Error when writing response: %s\n", err)
+	}
 }
 
 // Check that the state entered in the administrative state is valid

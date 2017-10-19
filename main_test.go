@@ -43,6 +43,11 @@ func TestDaemonWorkflow(t *testing.T) {
 	time.Sleep(time.Duration(200) * time.Millisecond)
 	processClient(configuration.AdminPort, "up")
 	conn, _ := net.Dial("tcp", "127.0.0.1:8888")
-	defer conn.Close()
+	defer func() {
+		err := conn.Close()
+		if err != nil {
+			t.Fatalf("Error when closing the TCP connection to the daemon: %s", err)
+		}
+	}()
 	fmt.Fprint(conn, "")
 }

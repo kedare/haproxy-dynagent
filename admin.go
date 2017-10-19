@@ -144,11 +144,18 @@ func getRootHandler(state *string) func(w http.ResponseWriter, r *http.Request) 
 			State *string
 		}{State: state}
 		tpl, _ := template.New("root").Parse(templateDef)
-		tpl.Execute(w, data)
+		err := tpl.Execute(w, data)
+		if err != nil {
+			w.WriteHeader(500)
+			log.Println("Failed to execute template", err)
+		}
 	}
 }
 
 func startAdministrativeInterface(configuration Configuration, state *string) {
 	http.HandleFunc("/", getRootHandler(state))
-	http.ListenAndServe(fmt.Sprintf("127.0.0.1:%v", configuration.AdminPort), nil)
+	err := http.ListenAndServe(fmt.Sprintf("127.0.0.1:%v", configuration.AdminPort), nil)
+	if err != nil {
+		log.Fatal("Failed to listen to admin port", err)
+	}
 }
