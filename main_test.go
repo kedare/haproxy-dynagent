@@ -9,7 +9,10 @@ import (
 
 // Build the test configuration (Without real configuration file)
 func buildTestConfiguration(t *testing.T) (configuration Configuration) {
-	configuration = loadConfiguration()
+	configuration, err := loadConfiguration()
+	if err != nil {
+		panic(err)
+	}
 	return
 }
 
